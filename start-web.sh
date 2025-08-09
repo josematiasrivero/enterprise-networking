@@ -22,8 +22,8 @@ SUPABASE_WORKDIR="$REPO_ROOT" supabase start >/dev/null
 
 # 2) Gather local keys from Supabase status (without exporting globally)
 STATUS_ENV="$(SUPABASE_WORKDIR="$REPO_ROOT" supabase status -o env)"
-ANON_KEY="$(printf "%s\n" "$STATUS_ENV" | sed -n 's/^ANON_KEY=\(.*\)$/\1/p')"
-SERVICE_ROLE_KEY="$(printf "%s\n" "$STATUS_ENV" | sed -n 's/^SERVICE_ROLE_KEY=\(.*\)$/\1/p')"
+ANON_KEY="$(printf "%s\n" "$STATUS_ENV" | grep '^ANON_KEY=' | cut -d'=' -f2-)"
+SERVICE_ROLE_KEY="$(printf "%s\n" "$STATUS_ENV" | grep '^SERVICE_ROLE_KEY=' | cut -d'=' -f2-)"
 
 if [[ -z "${ANON_KEY:-}" || -z "${SERVICE_ROLE_KEY:-}" ]]; then
   echo "Error: Could not retrieve local Supabase keys from 'supabase status'." >&2
@@ -58,18 +58,18 @@ echo "Applying pending migrations (if any)..."
 SUPABASE_WORKDIR="$REPO_ROOT" supabase db push --local >/dev/null || true
 
 # 5) Create dev user via supabase-js admin API using a small TS helper
-# Ensure web deps are installed (so @supabase/supabase-js is available)
-if [[ ! -d "$REPO_ROOT/web/node_modules" ]]; then
-  echo "Installing web dependencies..."
-  pnpm --dir "$REPO_ROOT/web" install >/dev/null
+# Ensure scripts deps are installed for the helper
+if [[ ! -d "$REPO_ROOT/scripts/node_modules" ]]; then
+  echo "Installing scripts dependencies..."
+  pnpm --dir "$REPO_ROOT/scripts" install >/dev/null
 fi
 
 # Only seed dev user for local Supabase URL
 if [[ "$NEXT_PUBLIC_SUPABASE_URL" == http://127.0.0.1:54321* || "$NEXT_PUBLIC_SUPABASE_URL" == http://localhost:54321* ]]; then
   echo "Creating dev user (dev@local.com) if missing..."
-  SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
-    SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL}" \
-    pnpm --dir "$REPO_ROOT/web" dlx tsx scripts/create-dev-user.ts
+  export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
+  export SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL}"
+  pnpm --dir "$REPO_ROOT/scripts" exec tsx create-dev-user.ts
 else
   echo "Skipping dev user creation because NEXT_PUBLIC_SUPABASE_URL is not local."
 fi
