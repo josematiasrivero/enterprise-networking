@@ -1,0 +1,52 @@
+Cursor rules for Enterprise Networking
+
+Scope
+- Monorepo with two main parts:
+  - web/: Next.js 15 App Router frontend (TypeScript + Tailwind + ESLint)
+  - supabase/: SQL migrations and project config (RLS-first)
+
+Architecture & Stack
+- Frontend: Next.js App Router, TypeScript, TailwindCSS, ESLint.
+  - Pages:
+    - /login: email/password auth using Supabase server actions
+    - /groups: protected; list/create/update/delete groups via server actions
+    - /: dynamic; redirects to /groups when authenticated, otherwise /login
+  - Data & Auth:
+    - Supabase via @supabase/ssr and @supabase/supabase-js
+    - Server-side auth with cookies adapter in lib/supabase/server.ts
+    - Use server actions for auth and CRUD; do NOT export server actions from pages
+    - Use revalidatePath("/groups") after mutations
+    - Mark pages that touch Supabase as dynamic = "force-dynamic" to avoid prerender env issues
+- Backend (DB): Supabase Postgres
+  - Migrations under supabase/migrations
+  - Example: groups table with owner-based RLS and updated_at trigger
+  - Prefer idempotent SQL (drop-if-exists for policies/triggers)
+
+Package Manager
+- Frontend (web/) uses pnpm.
+  - Install deps: pnpm install
+  - Dev server: pnpm dev
+  - Build: pnpm build
+  - Lint: pnpm lint
+  - If package-lock.json exists, run once: pnpm import (to generate pnpm-lock.yaml), then remove package-lock.json
+
+Conventions
+- TypeScript: strict; avoid any; when necessary (cookies adapter), local eslint-disable is acceptable
+- Naming: descriptive; functions verbs; variables nouns; avoid 1–2 char names
+- Server actions: define inside page files; don’t export named actions
+- Supabase client usage:
+  - Server components/actions: lib/supabase/server.ts (createServerClient with cookies())
+  - Client components: lib/supabase/client.ts (createBrowserClient)
+- Env vars (web/.env.local):
+  - NEXT_PUBLIC_SUPABASE_URL
+  - NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+Directory Notes
+- web/app: route segments
+- web/lib/supabase: SSR and browser clients
+- supabase/migrations: SQL files applied via Supabase CLI
+
+Testing/Running
+- Local dev: from web/: pnpm dev
+- Apply DB migrations: from repo root using Supabase CLI (e.g., supabase migration up)
+

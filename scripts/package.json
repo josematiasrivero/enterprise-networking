@@ -1,0 +1,16 @@
+{
+  "name": "web-scripts",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "dev-user": "tsx create-dev-user.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.54.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.0",
+    "typescript": "^5.5.0"
+  }
+} 
