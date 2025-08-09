@@ -22,8 +22,8 @@ SUPABASE_WORKDIR="$REPO_ROOT" supabase start >/dev/null
 
 # 2) Gather local keys from Supabase status (without exporting globally)
 STATUS_ENV="$(SUPABASE_WORKDIR="$REPO_ROOT" supabase status -o env)"
-ANON_KEY="$(printf "%s\n" "$STATUS_ENV" | grep '^ANON_KEY=' | cut -d'=' -f2-)"
-SERVICE_ROLE_KEY="$(printf "%s\n" "$STATUS_ENV" | grep '^SERVICE_ROLE_KEY=' | cut -d'=' -f2-)"
+ANON_KEY="$(printf "%s\n" "$STATUS_ENV" | grep '^ANON_KEY=' | cut -d'=' -f2- | sed -e 's/^"//' -e 's/"$//')"
+SERVICE_ROLE_KEY="$(printf "%s\n" "$STATUS_ENV" | grep '^SERVICE_ROLE_KEY=' | cut -d'=' -f2- | sed -e 's/^"//' -e 's/"$//')"
 
 if [[ -z "${ANON_KEY:-}" || -z "${SERVICE_ROLE_KEY:-}" ]]; then
   echo "Error: Could not retrieve local Supabase keys from 'supabase status'." >&2
