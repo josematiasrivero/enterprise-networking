@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { Button, Card, Input, ConfirmationModal, Modal, LoadingSpinner } from "@/lib/ui";
-import { Plus, Users, Edit2, Trash2, Calendar, Search, Filter, Link, Copy, Settings, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Users, Edit2, Trash2, Calendar, Search, Filter, Link, Copy, Settings, ToggleLeft, ToggleRight, Eye } from "lucide-react";
 import toast from "react-hot-toast";
+import NextLink from "next/link";
 
 interface Group {
   id: string;
@@ -268,14 +269,25 @@ export default function GroupsClient({
 
                 {/* Action Buttons */}
                 <div className="flex items-center justify-between">
-                  <Button
-                    onClick={() => handleInviteModal(group)}
-                    variant="ghost"
-                    className="text-xs p-1 h-auto"
-                  >
-                    <Link className="w-3 h-3 mr-1" />
-                    Invite Link
-                  </Button>
+                  <div className="flex items-center space-x-2">
+                    <NextLink href={`/groups/${group.id}`}>
+                      <Button
+                        variant="ghost"
+                        className="text-xs p-1 h-auto"
+                      >
+                        <Eye className="w-3 h-3 mr-1" />
+                        View Details
+                      </Button>
+                    </NextLink>
+                    <Button
+                      onClick={() => handleInviteModal(group)}
+                      variant="ghost"
+                      className="text-xs p-1 h-auto"
+                    >
+                      <Link className="w-3 h-3 mr-1" />
+                      Invite Link
+                    </Button>
+                  </div>
                   <div className="flex items-center space-x-1">
                     <button
                       onClick={() => handleEdit(group)}
