@@ -16,7 +16,7 @@ const supabase = createClient();
 export async function getGroupChatRoom(groupId: string): Promise<ChatRoom | null> {
   try {
     const { data, error } = await supabase
-      .rpc('get_or_create_group_chat_room', { group_id: groupId });
+      .rpc('get_or_create_group_chat_room', { p_group_id: groupId });
     
     if (error) throw error;
     

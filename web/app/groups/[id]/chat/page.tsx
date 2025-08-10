@@ -9,6 +9,7 @@ interface ChatPageProps {
 }
 
 export default async function ChatPage({ params }: ChatPageProps) {
+  const { id } = await params;
   const supabase = await createClient();
   
   // Get current user
@@ -22,7 +23,7 @@ export default async function ChatPage({ params }: ChatPageProps) {
   const { data: group, error: groupError } = await supabase
     .from('groups')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single();
 
   if (groupError || !group) {
