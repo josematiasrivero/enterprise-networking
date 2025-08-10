@@ -8,21 +8,21 @@ export function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          const store = cookies() as any;
+        async get(name: string) {
+          const store = await cookies() as any;
           return store.get(name)?.value as string | undefined;
         },
-        set(name: string, value: string, options: CookieOptions) {
+        async set(name: string, value: string, options: CookieOptions) {
           try {
-            const store = cookies() as any;
+            const store = await cookies() as any;
             store.set(name, value, options);
           } catch {
             // noop for Server Component context
           }
         },
-        remove(name: string, options: CookieOptions) {
+        async remove(name: string, options: CookieOptions) {
           try {
-            const store = cookies() as any;
+            const store = await cookies() as any;
             store.set(name, "", { ...options, maxAge: 0 });
           } catch {
             // noop for Server Component context

@@ -1,52 +1,190 @@
-Cursor rules for Enterprise Networking
+# Enterprise Networking Application
 
-Scope
-- Monorepo with two main parts:
-  - web/: Next.js 15 App Router frontend (TypeScript + Tailwind + ESLint)
-  - supabase/: SQL migrations and project config (RLS-first)
+## 🚀 Quick Start
 
-Architecture & Stack
-- Frontend: Next.js App Router, TypeScript, TailwindCSS, ESLint.
-  - Pages:
-    - /login: email/password auth using Supabase server actions
-    - /groups: protected; list/create/update/delete groups via server actions
-    - /: dynamic; redirects to /groups when authenticated, otherwise /login
-  - Data & Auth:
-    - Supabase via @supabase/ssr and @supabase/supabase-js
-    - Server-side auth with cookies adapter in lib/supabase/server.ts
-    - Use server actions for auth and CRUD; do NOT export server actions from pages
-    - Use revalidatePath("/groups") after mutations
-    - Mark pages that touch Supabase as dynamic = "force-dynamic" to avoid prerender env issues
-- Backend (DB): Supabase Postgres
-  - Migrations under supabase/migrations
-  - Example: groups table with owner-based RLS and updated_at trigger
-  - Prefer idempotent SQL (drop-if-exists for policies/triggers)
+**IMPORTANT:** Always start the application using:
+```bash
+./start-web.sh
+```
 
-Package Manager
-- Frontend (web/) uses pnpm.
-  - Install deps: pnpm install
-  - Dev server: pnpm dev
-  - Build: pnpm build
-  - Lint: pnpm lint
-  - If package-lock.json exists, run once: pnpm import (to generate pnpm-lock.yaml), then remove package-lock.json
+This script handles the complete startup sequence including Supabase local development environment setup.
 
-Conventions
-- TypeScript: strict; avoid any; when necessary (cookies adapter), local eslint-disable is acceptable
-- Naming: descriptive; functions verbs; variables nouns; avoid 1–2 char names
-- Server actions: define inside page files; don’t export named actions
-- Supabase client usage:
-  - Server components/actions: lib/supabase/server.ts (createServerClient with cookies())
-  - Client components: lib/supabase/client.ts (createBrowserClient)
-- Env vars (web/.env.local):
-  - NEXT_PUBLIC_SUPABASE_URL
-  - NEXT_PUBLIC_SUPABASE_ANON_KEY
+## 🏗️ Architecture Overview
 
-Directory Notes
-- web/app: route segments
-- web/lib/supabase: SSR and browser clients
-- supabase/migrations: SQL files applied via Supabase CLI
+This is a full-stack web application built with:
 
-Testing/Running
-- Local dev: from web/: pnpm dev
-- Apply DB migrations: from repo root using Supabase CLI (e.g., supabase migration up)
+### **Frontend Stack**
+- **Next.js 15** (App Router) - React framework with server-side rendering
+- **TypeScript** - Type-safe JavaScript
+- **Tailwind CSS** - Utility-first CSS framework
+- **React Hot Toast** - Toast notification system
 
+### **Backend Stack**
+- **Supabase** - Backend-as-a-Service providing:
+  - PostgreSQL database
+  - Authentication & authorization
+  - Real-time subscriptions
+  - Row Level Security (RLS)
+
+### **Development Tools**
+- **pnpm** - Fast, disk space efficient package manager
+- **Supabase CLI** - Local development environment
+- **ESLint** - Code linting
+- **Turbopack** - Fast bundler for development
+
+## 📁 Project Structure
+
+```
+enterprise-networking/
+├── start-web.sh           # 🎯 MAIN STARTUP SCRIPT
+├── supabase/              # Database & backend configuration
+│   ├── config.toml        # Supabase local config
+│   └── migrations/        # Database schema migrations
+│       └── 20250809000000_create_groups.sql
+├── scripts/               # Utility scripts
+│   ├── create-dev-user.ts # Dev user seeding script
+│   └── package.json       # Scripts dependencies
+└── web/                   # Next.js application
+    ├── app/               # Next.js App Router pages
+    │   ├── (auth)/        # Authentication routes group
+    │   │   └── login/     # Login page with toast notifications
+    │   ├── groups/        # Groups management
+    │   ├── layout.tsx     # Root layout with ToastProvider
+    │   └── page.tsx       # Home page
+    ├── lib/               # Shared utilities
+    │   ├── supabase/      # Supabase client configuration
+    │   │   ├── client.ts  # Client-side Supabase client
+    │   │   └── server.ts  # Server-side Supabase client
+    │   └── toast.tsx      # Toast notification provider
+    └── package.json       # Web app dependencies
+```
+
+## 🔧 Development Workflow
+
+### 1. **Starting the Application**
+```bash
+./start-web.sh
+```
+
+This script automatically:
+1. ✅ Starts local Supabase (PostgreSQL, Auth, etc.)
+2. ✅ Extracts local Supabase keys
+3. ✅ Sets environment variables
+4. ✅ Applies database migrations
+5. ✅ Seeds development user (`dev@local.com`)
+6. ✅ Starts Next.js dev server
+
+### 2. **Key Features Implemented**
+- **Authentication:** Login/signup with Supabase Auth
+- **Toast Notifications:** Error handling with react-hot-toast
+- **Groups Management:** CRUD operations for groups
+- **Type Safety:** Full TypeScript coverage
+- **Server Actions:** Modern Next.js form handling
+
+### 3. **Environment Variables**
+Automatically handled by `start-web.sh`:
+- `NEXT_PUBLIC_SUPABASE_URL` → Local Supabase instance
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` → Local anonymous key
+
+## 🛠️ Development Guidelines
+
+### **Code Style**
+- Use TypeScript for all new files
+- Follow Next.js App Router patterns
+- Use server components by default, client components when needed
+- Implement proper error handling with toast notifications
+
+### **Database**
+- All schema changes via Supabase migrations
+- Use Row Level Security (RLS) for data access control
+- Test locally before deploying
+
+### **Authentication**
+- Supabase Auth handles all user management
+- Server-side auth checks in page components
+- Client-side auth state management via Supabase client
+
+### **Error Handling**
+- Use toast notifications for user-facing errors
+- Server actions return error objects for client handling
+- Graceful fallbacks for missing configuration
+
+## 🚨 Important Notes
+
+### **Prerequisites**
+Before running `./start-web.sh`, ensure you have:
+1. **Supabase CLI** installed: `npm i -g @supabase/cli`
+2. **pnpm** installed: `npm i -g pnpm`
+3. **Docker** running (for Supabase local development)
+
+### **Development URLs**
+After running `./start-web.sh`:
+- **Web App:** http://localhost:3000
+- **Supabase Studio:** http://localhost:54323
+- **Toast Demo:** http://localhost:3000/toast-demo
+
+### **Test Credentials**
+Development user created automatically:
+- **Email:** `dev@local.com`
+- **Password:** `password`
+
+## 🎯 Key Files to Know
+
+### **Authentication**
+- `web/app/(auth)/login/page.tsx` - Login page with server actions
+- `web/app/(auth)/login/login-form.tsx` - Client-side form with toast integration
+- `web/lib/supabase/server.ts` - Server-side Supabase client (async cookies fixed)
+- `web/lib/supabase/client.ts` - Client-side Supabase client
+
+### **Toast System**
+- `web/lib/toast.tsx` - Toast provider configuration
+- `web/app/layout.tsx` - Global toast provider setup
+- `web/app/toast-demo/page.tsx` - Toast functionality demo
+
+### **Database**
+- `supabase/migrations/20250809000000_create_groups.sql` - Groups table schema
+- `supabase/config.toml` - Local Supabase configuration
+
+## 🔄 Common Tasks
+
+### **Adding New Pages**
+1. Create in `web/app/` following App Router conventions
+2. Use server components for data fetching
+3. Add client components for interactivity
+4. Implement proper error handling with toasts
+
+### **Database Changes**
+1. Create migration: `supabase migration new migration_name`
+2. Write SQL in the generated file
+3. Test locally: `supabase db reset --local`
+4. Apply: `supabase db push --local`
+
+### **Adding Dependencies**
+```bash
+# Web app dependencies
+cd web && pnpm add package-name
+
+# Script dependencies  
+cd scripts && pnpm add package-name
+```
+
+## 🐛 Troubleshooting
+
+### **"Supabase not found" error**
+Install Supabase CLI: `npm i -g @supabase/cli`
+
+### **"pnpm not found" error** 
+Install pnpm: `npm i -g pnpm`
+
+### **Port conflicts**
+Change ports in `supabase/config.toml` if needed
+
+### **Toast not showing**
+Check that `ToastProvider` is in root layout and component is client-side
+
+### **Auth errors**
+Verify environment variables are set by `start-web.sh`
+
+---
+
+**Remember:** Always use `./start-web.sh` to start the application!

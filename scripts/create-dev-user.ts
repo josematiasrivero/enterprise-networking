@@ -18,7 +18,7 @@ async function main() {
   });
 
   const email = "dev@local.com";
-  const password = "password123";
+  const password = "password";
 
   // Check if user exists
   const { data: usersList, error: listErr } = await client.auth.admin.listUsers({

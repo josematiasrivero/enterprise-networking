@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { Navigation } from "@/components/navigation";
+import GroupsClient from "./groups-client";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +66,7 @@ async function signOut() {
 }
 
 export default async function GroupsPage() {
-  const { supabase } = await requireUser();
+  const { supabase, user } = await requireUser();
   const { data: groups, error } = await supabase
     .from("groups")
     .select("id, name, created_at")
@@ -75,46 +77,17 @@ export default async function GroupsPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Groups</h1>
-        <form action={signOut}>
-          <button className="rounded-md border px-3 py-1.5">Sign out</button>
-        </form>
-      </div>
-
-      <form action={createGroup} className="flex gap-2">
-        <input
-          type="text"
-          name="name"
-          placeholder="New group name"
-          required
-          className="flex-1 rounded-md border p-2 bg-transparent"
+    <div className="min-h-screen bg-gray-50">
+      <Navigation user={user} onSignOut={signOut} />
+      
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <GroupsClient 
+          groups={groups || []} 
+          createGroup={createGroup}
+          updateGroup={updateGroup}
+          deleteGroup={deleteGroup}
         />
-        <button className="rounded-md bg-black text-white dark:bg-white dark:text-black px-3 py-2">
-          Create
-        </button>
-      </form>
-
-      <ul className="space-y-2">
-        {(groups || []).map((g) => (
-          <li key={g.id} className="flex items-center gap-2">
-            <form action={updateGroup} className="flex flex-1 items-center gap-2">
-              <input type="hidden" name="id" value={g.id} />
-              <input
-                name="name"
-                defaultValue={g.name}
-                className="flex-1 rounded-md border p-2 bg-transparent"
-              />
-              <button className="rounded-md border px-3 py-2">Save</button>
-            </form>
-            <form action={deleteGroup}>
-              <input type="hidden" name="id" value={g.id} />
-              <button className="rounded-md border px-3 py-2 text-red-600">Delete</button>
-            </form>
-          </li>
-        ))}
-      </ul>
+      </main>
     </div>
   );
 } 

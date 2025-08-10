@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ToastProvider } from "@/lib/toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "Enterprise Networking",
-  description: "Demo app with Supabase auth and groups CRUD",
+  description: "Modern enterprise networking platform with seamless group management",
 };
 
 export default function RootLayout({
@@ -22,11 +23,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="h-full">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full bg-gray-50`}
       >
-        {children}
+        <div className="min-h-full">
+          {children}
+        </div>
+        <ToastProvider />
       </body>
     </html>
   );
