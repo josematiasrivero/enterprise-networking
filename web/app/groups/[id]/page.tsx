@@ -107,17 +107,27 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
             </Link>
           </div>
           
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-              <Users className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{group.name}</h1>
-              <div className="flex items-center text-gray-500 mt-2">
-                <Calendar className="w-4 h-4 mr-2" />
-                Created {formatDate(group.created_at)}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                <Users className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">{group.name}</h1>
+                <div className="flex items-center text-gray-500 mt-2">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Created {formatDate(group.created_at)}
+                </div>
               </div>
             </div>
+            
+            {/* Chat button */}
+            <Link
+              href={`/groups/${group.id}/chat`}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              💬 Open Chat
+            </Link>
           </div>
         </div>
 
