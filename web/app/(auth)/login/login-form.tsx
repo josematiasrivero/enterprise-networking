@@ -8,9 +8,10 @@ import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 interface LoginFormProps {
   signIn: (formData: FormData) => Promise<{ error?: string } | void>;
   signUp: (formData: FormData) => Promise<{ error?: string } | void>;
+  inviteToken?: string;
 }
 
-export default function LoginForm({ signIn, signUp }: LoginFormProps) {
+export default function LoginForm({ signIn, signUp, inviteToken }: LoginFormProps) {
   const [isSigningIn, startSignInTransition] = useTransition();
   const [isSigningUp, startSignUpTransition] = useTransition();
   const [signInEmail, setSignInEmail] = useState("");
@@ -125,6 +126,9 @@ export default function LoginForm({ signIn, signUp }: LoginFormProps) {
       </div>
 
       <form action={handleSignIn} className="space-y-4">
+        {inviteToken && (
+          <input type="hidden" name="inviteToken" value={inviteToken} />
+        )}
         <div className="space-y-4">
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />

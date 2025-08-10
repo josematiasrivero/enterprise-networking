@@ -58,6 +58,42 @@ async function deleteGroup(formData: FormData) {
   revalidatePath("/groups");
 }
 
+async function regenerateInviteToken(formData: FormData) {
+  "use server";
+  const groupId = String(formData.get("groupId") || "");
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  
+  const { data, error } = await supabase.rpc('regenerate_group_invitation_token', {
+    group_id: groupId
+  });
+  
+  if (error) throw new Error(error.message);
+  revalidatePath("/groups");
+}
+
+async function toggleInvitations(formData: FormData) {
+  "use server";
+  const groupId = String(formData.get("groupId") || "");
+  const enabled = String(formData.get("enabled") || "") === "true";
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  
+  const { error } = await supabase
+    .from("groups")
+    .update({ invitation_enabled: enabled })
+    .eq("id", groupId);
+    
+  if (error) throw new Error(error.message);
+  revalidatePath("/groups");
+}
+
 async function signOut() {
   "use server";
   const supabase = createClient();
@@ -69,7 +105,7 @@ export default async function GroupsPage() {
   const { supabase, user } = await requireUser();
   const { data: groups, error } = await supabase
     .from("groups")
-    .select("id, name, created_at")
+    .select("id, name, created_at, invitation_token, invitation_enabled, owner")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -86,6 +122,8 @@ export default async function GroupsPage() {
           createGroup={createGroup}
           updateGroup={updateGroup}
           deleteGroup={deleteGroup}
+          regenerateInviteToken={regenerateInviteToken}
+          toggleInvitations={toggleInvitations}
         />
       </main>
     </div>

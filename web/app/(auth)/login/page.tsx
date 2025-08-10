@@ -31,6 +31,7 @@ async function signIn(formData: FormData) {
   
   const email = String(formData.get("email") || "").trim();
   const password = String(formData.get("password") || "");
+  const inviteToken = String(formData.get("inviteToken") || "");
   
   if (!email || !password) {
     return { error: "Email and password are required" };
@@ -44,7 +45,13 @@ async function signIn(formData: FormData) {
   }
   
   revalidatePath("/groups");
-  redirect("/groups");
+  
+  // If there's an invite token, redirect to the invitation page
+  if (inviteToken) {
+    redirect(`/invite/${inviteToken}`);
+  } else {
+    redirect("/groups");
+  }
 }
 
 async function signUp(formData: FormData) {
@@ -120,9 +127,16 @@ function EnvironmentErrorPage() {
   );
 }
 
-export default async function LoginPage() {
+interface LoginPageProps {
+  searchParams: Promise<{
+    invite?: string;
+  }>;
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
   try {
     await requireAnon();
+    const params = await searchParams;
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
         <Navigation user={null} />
@@ -142,7 +156,7 @@ export default async function LoginPage() {
 
             {/* Login Form Card */}
             <Card>
-              <LoginForm signIn={signIn} signUp={signUp} />
+              <LoginForm signIn={signIn} signUp={signUp} inviteToken={params.invite} />
             </Card>
 
             {/* Additional info */}

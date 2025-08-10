@@ -2,13 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { Button, Card, Input, ConfirmationModal, Modal, LoadingSpinner } from "@/lib/ui";
-import { Plus, Users, Edit2, Trash2, Calendar, Search, Filter } from "lucide-react";
+import { Plus, Users, Edit2, Trash2, Calendar, Search, Filter, Link, Copy, Settings, ToggleLeft, ToggleRight } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface Group {
   id: string;
   name: string;
   created_at: string;
+  invitation_token: string;
+  invitation_enabled: boolean;
+  owner: string;
 }
 
 interface GroupsClientProps {
@@ -16,17 +19,22 @@ interface GroupsClientProps {
   createGroup: (formData: FormData) => Promise<void>;
   updateGroup: (formData: FormData) => Promise<void>;
   deleteGroup: (formData: FormData) => Promise<void>;
+  regenerateInviteToken: (formData: FormData) => Promise<void>;
+  toggleInvitations: (formData: FormData) => Promise<void>;
 }
 
 export default function GroupsClient({ 
   groups, 
   createGroup, 
   updateGroup, 
-  deleteGroup 
+  deleteGroup,
+  regenerateInviteToken,
+  toggleInvitations
 }: GroupsClientProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [newGroupName, setNewGroupName] = useState("");
   const [editGroupName, setEditGroupName] = useState("");
@@ -34,6 +42,8 @@ export default function GroupsClient({
   const [isCreating, startCreateTransition] = useTransition();
   const [isUpdating, startUpdateTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
+  const [isRegenerating, startRegenerateTransition] = useTransition();
+  const [isTogglingInvites, startToggleTransition] = useTransition();
 
   const filteredGroups = groups.filter(group =>
     group.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -104,6 +114,46 @@ export default function GroupsClient({
         toast.success("Group deleted successfully!");
       } catch (error) {
         toast.error("Failed to delete group");
+      }
+    });
+  };
+
+  const handleInviteModal = (group: Group) => {
+    setSelectedGroup(group);
+    setIsInviteModalOpen(true);
+  };
+
+  const copyInviteLink = (token: string) => {
+    const inviteUrl = `${window.location.origin}/invite/${token}`;
+    navigator.clipboard.writeText(inviteUrl);
+    toast.success("Invitation link copied to clipboard!");
+  };
+
+  const handleRegenerateToken = () => {
+    if (!selectedGroup) return;
+
+    startRegenerateTransition(async () => {
+      try {
+        const formData = new FormData();
+        formData.append("groupId", selectedGroup.id);
+        await regenerateInviteToken(formData);
+        toast.success("New invitation link generated!");
+      } catch (error) {
+        toast.error("Failed to regenerate invitation link");
+      }
+    });
+  };
+
+  const handleToggleInvitations = (group: Group, enabled: boolean) => {
+    startToggleTransition(async () => {
+      try {
+        const formData = new FormData();
+        formData.append("groupId", group.id);
+        formData.append("enabled", enabled.toString());
+        await toggleInvitations(formData);
+        toast.success(`Invitations ${enabled ? "enabled" : "disabled"} for ${group.name}`);
+      } catch (error) {
+        toast.error("Failed to update invitation settings");
       }
     });
   };
@@ -193,25 +243,55 @@ export default function GroupsClient({
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                <div className="text-sm text-gray-500">
-                  <span className="font-medium">Active</span>
+              <div className="space-y-3 pt-4 border-t border-gray-100">
+                {/* Invitation Status */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Link className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-500">
+                      Invites: {group.invitation_enabled ? "Enabled" : "Disabled"}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleToggleInvitations(group, !group.invitation_enabled)}
+                    disabled={isTogglingInvites}
+                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                    title={group.invitation_enabled ? "Disable invitations" : "Enable invitations"}
+                  >
+                    {group.invitation_enabled ? (
+                      <ToggleRight className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <ToggleLeft className="w-5 h-5" />
+                    )}
+                  </button>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => handleEdit(group)}
-                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="Edit group"
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between">
+                  <Button
+                    onClick={() => handleInviteModal(group)}
+                    variant="ghost"
+                    className="text-xs p-1 h-auto"
                   >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(group)}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Delete group"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                    <Link className="w-3 h-3 mr-1" />
+                    Invite Link
+                  </Button>
+                  <div className="flex items-center space-x-1">
+                    <button
+                      onClick={() => handleEdit(group)}
+                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Edit group"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(group)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete group"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </Card>
@@ -299,6 +379,81 @@ export default function GroupsClient({
         variant="danger"
         isLoading={isDeleting}
       />
+
+      {/* Invitation Modal */}
+      <Modal
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        title={`Invitation Link - ${selectedGroup?.name}`}
+      >
+        <div className="space-y-6">
+          <div className="text-sm text-gray-600">
+            Share this link to invite new users to join <strong>{selectedGroup?.name}</strong>. 
+            Users can create an account or sign in to accept the invitation.
+          </div>
+
+          {selectedGroup && (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <div className="flex-1 p-3 bg-gray-50 border rounded-lg font-mono text-sm break-all text-gray-800">
+                  {`${window.location.origin}/invite/${selectedGroup.invitation_token}`}
+                </div>
+                <button
+                  onClick={() => copyInviteLink(selectedGroup.invitation_token)}
+                  className="shrink-0 p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  title="Copy link"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                <div>
+                  <div className="font-medium text-blue-900">Invitation Status</div>
+                  <div className="text-sm text-blue-700">
+                    {selectedGroup.invitation_enabled ? "Active - users can join" : "Disabled - link will not work"}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleToggleInvitations(selectedGroup, !selectedGroup.invitation_enabled)}
+                  disabled={isTogglingInvites}
+                  className="flex items-center space-x-2 px-3 py-1 bg-blue-100 hover:bg-blue-200 rounded-md transition-colors"
+                >
+                  {selectedGroup.invitation_enabled ? (
+                    <>
+                      <ToggleRight className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-blue-900">Enabled</span>
+                    </>
+                  ) : (
+                    <>
+                      <ToggleLeft className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm text-blue-900">Disabled</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-between space-x-3">
+            <Button 
+              variant="ghost" 
+              onClick={() => setIsInviteModalOpen(false)}
+            >
+              Close
+            </Button>
+            <Button 
+              onClick={handleRegenerateToken}
+              disabled={isRegenerating}
+              className="flex items-center space-x-2"
+            >
+              {isRegenerating && <LoadingSpinner size="sm" />}
+              <Settings className="w-4 h-4" />
+              <span>{isRegenerating ? "Generating..." : "Generate New Link"}</span>
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 } 
