@@ -77,4 +77,5 @@ fi
 # 6) Start Next.js app
 cd "$REPO_ROOT/web"
 echo "Starting Next.js dev server in /web ..."
+pnpm install
 pnpm dev 
