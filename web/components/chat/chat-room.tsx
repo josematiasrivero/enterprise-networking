@@ -9,6 +9,7 @@ import {
   deleteMessage, 
   subscribeToRoomMessages 
 } from '@/lib/chat';
+import { createClient } from '@/lib/supabase/client';
 import MessageList from './message-list';
 import MessageInput from './message-input';
 import { toast } from 'react-hot-toast';
@@ -21,6 +22,7 @@ interface ChatRoomProps {
 export default function ChatRoomComponent({ room, currentUserId }: ChatRoomProps) {
   const [messages, setMessages] = useState<MessageWithSender[]>([]);
   const [loading, setLoading] = useState(true);
+  const supabase = createClient();
 
   // Load initial messages
   const loadMessages = useCallback(async () => {
@@ -46,18 +48,33 @@ export default function ChatRoomComponent({ room, currentUserId }: ChatRoomProps
       room.id,
       // On new message
       async (newMessage) => {
-        // Get sender details and add to messages
-        try {
-          const messagesWithSender = await getRoomMessages(room.id, 1);
-          if (messagesWithSender.length > 0) {
-            const latestMessage = messagesWithSender[0];
-            if (latestMessage.id === newMessage.id) {
-              setMessages(prev => [...prev, latestMessage]);
-            }
+        // Check if this message is already in our local state (from optimistic update)
+        setMessages(prev => {
+          const messageExists = prev.some(msg => msg.id === newMessage.id);
+          if (messageExists) {
+            return prev; // Don't add duplicate
           }
-        } catch (error) {
-          console.error('Error handling new message:', error);
-        }
+
+          // Add new message with sender info - try to get it from auth
+          try {
+            // For messages from other users, we need to get sender info
+            if (newMessage.sender_id !== currentUserId) {
+              // We'll add a placeholder and let the next message load cycle update it
+              const messageWithSender = {
+                ...newMessage,
+                sender: {
+                  id: newMessage.sender_id,
+                  email: 'Loading...' // Temporary placeholder
+                }
+              };
+              return [...prev, messageWithSender];
+            }
+          } catch (error) {
+            console.error('Error handling new message:', error);
+          }
+          
+          return prev;
+        });
       },
       // On message edit
       (editedMessage) => {
@@ -74,13 +91,28 @@ export default function ChatRoomComponent({ room, currentUserId }: ChatRoomProps
     );
 
     return unsubscribe;
-  }, [room.id]);
+  }, [room.id, currentUserId]);
 
   const handleSendMessage = async (content: string) => {
     try {
       const newMessage = await sendMessage(room.id, content);
       if (!newMessage) {
         toast.error('Failed to send message');
+        return;
+      }
+
+      // Optimistically add the message to local state immediately
+      // We'll need to get the current user info for the sender
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const messageWithSender = {
+          ...newMessage,
+          sender: {
+            id: user.id,
+            email: user.email || 'Unknown'
+          }
+        };
+        setMessages(prev => [...prev, messageWithSender]);
       }
     } catch (error) {
       console.error('Error sending message:', error);
